@@ -6,8 +6,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +28,8 @@ export default function RootLayout() {
   return (
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="newTransaction" options={{ headerShown: false }} />
+        <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
   );

@@ -1,17 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TextInput, Text, Button, StyleSheet, Pressable } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { type Transaction, useDB } from '@/hooks/useDB';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const NewTransaction = () => {
-  const [transaction, setTransaction] = useState<Transaction>({
-    type: 'expense',
-    amount: null,
-    description: null,
-    date: new Date(),
-  });
+const EditTransaction = () => {
+
+    const { id } = useLocalSearchParams();
+    const { getTransaction, updateTransaction } = useDB();
+    const [transaction, setTransaction] = useState<Transaction>({
+        type: 'expense',
+        amount: null,
+        description: null,
+        date: new Date(),
+    });
+    
+    useEffect(() => {
+        const loadTransaction = async () => {
+            const result = await getTransaction(id);
+            console.log('Transaction', result);
+            setTransaction({...result,date:new Date(result.date)});
+        };
+        loadTransaction();
+    },[id])
 
   const { insertTransaction } = useDB();
   const [openDatePicker, setOpenDatePicker] = useState(false)
@@ -21,22 +33,22 @@ const NewTransaction = () => {
     setTransaction({ ...transaction, amount: numericValue as number});
   };
 
-  const handleTypeChange = (type: Transaction['type']) => {
+  const handleTypeChange = (type: 'income' | 'expense') => {
     setTransaction({ ...transaction, type });
   }
-
+  
   const handleCategoryChange = (category: Transaction['category']) => {
     setTransaction({ ...transaction, category });
   }
 
-  const handleDescriptionChange = (description:Transaction['description']) => {
+  const handleDescriptionChange = (description:string) => {
     setTransaction({ ...transaction, description });
   }
 
-  const addTransaction = async () => {
+  const hanldeUpdateTransaction = async () => {
     // Add transaction logic
-    const result = await insertTransaction(transaction);
-    console.log('Transaction added', result);
+    const result = await updateTransaction(transaction);
+    console.log('Transaction updated', result);
     router.back();
   };
 
@@ -62,6 +74,7 @@ const NewTransaction = () => {
             <Text>Expense</Text>
         </Pressable>
       </View>
+
       <Text>Category</Text>
       <View style={styles.btnContainer}>
         <Pressable 
@@ -143,8 +156,8 @@ const NewTransaction = () => {
         <Pressable style={styles.btn} onPress={router.back}>
           <Text>Cancel</Text>
         </Pressable>
-        <Pressable style={styles.btn} onPress={addTransaction} disabled={!transaction.amount}>
-          <Text>Add</Text>
+        <Pressable style={styles.btn} onPress={hanldeUpdateTransaction} disabled={!transaction.amount}>
+          <Text>Update</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -181,7 +194,7 @@ const styles = StyleSheet.create({
   },
   btn: {
     flex: 1,
-    margin: 7,
+    margin: 10,
     borderWidth: 1,
     borderBlockColor: 'blue',
     borderRadius: 8,
@@ -196,4 +209,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default NewTransaction;
+export default EditTransaction;

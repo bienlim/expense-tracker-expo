@@ -17,12 +17,13 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
-        name="wallet"
+        name="stats"
         options={{
-          title: 'Wallet',
+          title: 'Stats',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="wallet-outline" size={size} color={color} />
+            <Ionicons name="pie-chart-outline" size={size} color={color} />
           ),
         }}
       />

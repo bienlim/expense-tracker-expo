@@ -1,58 +1,101 @@
 import { type Transaction, useDB } from '@/hooks/useDB';
-import { router, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Image, StyleSheet, Platform, View, Text, FlatList, Button, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Pressable, TextInput } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import InputForm from '@/components/InputForm';
   
 
 
 export default function HomeScreen() {
-  const { insertTransaction, getAllTransactions } = useDB()
+  const { getAllTransactions } = useDB()
   const [transactions, setTransactions] = useState<Transaction[]>()
-  const [type, setType] = useState<string>()
-  const [amount, setAmount] = useState<number>()
-  const [description, setDescription] = useState<string>()  
-  const [datetime, setDatetime] = useState<Date>()
-
+  const [totalExpense, setTotalExpense] = useState<number>()
+  const [totalIncome, setTotalIncome] = useState<number>()
+  const [balance, setBalance] = useState<number>()
+  
   useFocusEffect(
     useCallback(() => {
-      loadTransactions()
-    },[]),
-  )
-
-
+      const loadAndCalculate = async () => {
+        const loadedTransactions = await loadTransactions();
+        const loadedExpenses = await calculateTotalExpense(loadedTransactions);
+        const loadedIncome = await calculateTotalIncome(loadedTransactions);
+        calculateBalance(loadedExpenses, loadedIncome);
+      };
+      loadAndCalculate();
+    }, [])
+  );
 
   const loadTransactions = async () => {
     const result = await getAllTransactions()
     console.log('Transactions',result)
-    setTransactions(result)
+    setTransactions(result);
+    return result;
   }
+
+  const calculateTotalExpense = async (loadedTransactions: Transaction[]) => {
+    const amount = (loadedTransactions ?? [])
+      .filter((transaction) => transaction.type === 'expense')
+      .reduce((acc, transaction) => acc + (transaction.amount || 0), 0)
+      .toFixed(2);
+    console.log('Total Expense', amount)
+    setTotalExpense(Number.parseFloat(amount))
+    return Number.parseFloat(amount)
+  }
+
+  const calculateTotalIncome = async (loadedTransactions: Transaction[]) => {
+    const amount = (loadedTransactions ?? [])
+      .filter((transaction) => transaction.type === 'income')
+      .reduce((acc, transaction) => acc + (transaction.amount || 0), 0)
+      .toFixed(2)
+    console.log('Total Income', amount)
+    setTotalIncome(Number.parseFloat(amount))
+    return Number.parseFloat(amount)
+  }
+
+  const calculateBalance = async (loadedExpenses: number, loadedIncome: number) => {
+    const balance = Number.parseFloat(Number((loadedIncome ?? 0) - (loadedExpenses ?? 0)).toFixed(2));
+    console.log('Balance', balance)
+    setBalance(balance)
+  }
+
+  const transactionItem = ({ item }: { item: Transaction }) => (
+    <Pressable style={styles.transaction} onPress={() => router.push(`/transaction/${item.id}`)}>
+      <View style={styles.transactionDetails}>
+        <Text style={styles.description}>{item.description}</Text>
+        <Text style={styles.category}>{item.category}</Text>
+        <Text style={styles.date}>{new Date(item.date).toLocaleDateString()}</Text>
+      </View>
+      <Text style={[styles.amount, { color: item.type === "expense" ? "red" : "green" }]}>
+        {item.type === "expense" ? "-" : ""}{item.amount?.toLocaleString()}
+      </Text>
+  </Pressable>
+  );
+
 
 
   return (
     <GestureHandlerRootView>
       <SafeAreaView style={styles.container}>
-        <View style={styles.CardContainer}>
-          <Text style={{flex:1}}>
+        <View style={styles.cardContainer}>
+          <Text style={styles.text}>
             Home Screen
+          </Text>
+          <Text style={styles.text}>
+            Balance: {balance?.toLocaleString()}
+          </Text>
+          <Text style={styles.text}>
+            Total Expense: {totalExpense?.toLocaleString()}
+          </Text>
+          <Text style={styles.text}>
+            Total Income: {totalIncome?.toLocaleString()}
           </Text>
         </View>
       <View style={styles.ListContainer}>
           <FlatList
             data={transactions}
-            renderItem={({ item }) => 
-              <View style={styles.transaction}>
-                <View>
-                  <Text>{item.description}</Text>
-                  <Text>{item.type}</Text>
-                </View>
-                <Text>{item.amount}</Text>
-              </View>
-
-            }
+            renderItem={transactionItem}
           />
         
           <Pressable
@@ -72,49 +115,84 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
   },
-  CardContainer: {
-    flex:1,
-    backgroundColor: 'grey',
-    margin: 16,
-    padding: 16,
+  cardContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
-    marginBottom: 0,
+    padding: 16,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  text: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginVertical: 4,
   },
   ListContainer: {
     flex: 2,
     backgroundColor: 'grey',
-    margin: 16,
-    padding: 16,
+    margin: 0,
+    padding: 8,
     borderRadius: 8,
 
   },
   transaction: {
-    height: 60,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 5,
-    margin: 8,
-    borderRadius: 8,
-    backgroundColor: 'white',
-  },
-  contentContainer: {
-    flex: 1,
     alignItems: 'center',
-  },
-  input: {
-    height: 40,
-    width: 200,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
+    padding: 16,
+    marginVertical: 8,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  description: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  category: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  amount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  date: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
   addBtn: {
     position: 'absolute',
-    right: 0,
-    bottom: 0,
-  }
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
 
 })
