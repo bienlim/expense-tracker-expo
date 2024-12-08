@@ -1,74 +1,160 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { type Transaction, useDB } from '@/hooks/useDB';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { Image, StyleSheet, Platform, View, Text, FlatList, Button, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView, Pressable, TextInput } from 'react-native-gesture-handler';
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+import { Ionicons } from '@expo/vector-icons';
+import InputForm from '@/components/InputForm';
+  
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+  const { insertTransaction, getAllTransactions } = useDB()
+  const [transactions, setTransactions] = useState<Transaction[]>()
+  const [type, setType] = useState<string>()
+  const [amount, setAmount] = useState<number>()
+  const [description, setDescription] = useState<string>()  
+  const [datetime, setDatetime] = useState<Date>()
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions()
+    },[]),
+  )
+
+    // ref
+    const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+    // callbacks
+    const handlePresentModalPress = useCallback(() => {
+      bottomSheetModalRef.current?.present();
+    }, []);
+    const handleSheetChanges = useCallback((index: number) => {
+      console.log('handleSheetChanges', index);
+    }, []);
+
+  const addTransaction = async () => {
+    //const result = await insertTransaction(transaction)
+    //console.log('Transaction added',result)
+  }
+
+  const loadTransactions = async () => {
+    const result = await getAllTransactions()
+    console.log('Transactions',result)
+    setTransactions(result)
+  }
+
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    <GestureHandlerRootView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.CardContainer}>
+        <Text style={{flex:1}}>
+          Home Screen
+        </Text>
+      </View>
+      <BottomSheetModalProvider>
+        <View style={styles.ListContainer}>
+          <FlatList
+            data={transactions}
+            renderItem={({ item }) => 
+              <View style={styles.transaction}>
+                <View>
+                  <Text>{item.description}</Text>
+                  <Text>{item.type}</Text>
+                </View>
+                <Text>{item.amount}</Text>
+              </View>
+
+            }
+          />
+        
+          <Pressable
+            style={styles.addBtn}
+            onPress={handlePresentModalPress}
+          >
+            <Ionicons name="add-circle" size={60} color="blue" />
+          </Pressable>
+          <BottomSheetModal
+            ref={bottomSheetModalRef}
+            onChange={handleSheetChanges}
+          >
+                <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <BottomSheetView style={styles.contentContainer}>
+                <Text>New Expense 🎉</Text>
+                <InputForm title="Type"/>
+                <InputForm title="Amount"/>
+                <InputForm title="Description"/>
+                <InputForm title="Date & Time"/>
+  
+              <View style={{flexDirection:'row'}}>
+                <Button title="Add" onPress={addTransaction}/>
+              </View>
+            </BottomSheetView>
+            </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+        </BottomSheetModal>
+        </View>
+      
+        </BottomSheetModalProvider>
+        
+    </SafeAreaView>
+    </GestureHandlerRootView>
+  )
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  CardContainer: {
+    flex:1,
+    backgroundColor: 'grey',
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 0,
+  },
+  ListContainer: {
+    flex: 2,
+    backgroundColor: 'grey',
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+
+  },
+  transaction: {
+    height: 60,
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 5,
+    margin: 8,
+    borderRadius: 8,
+    backgroundColor: 'white',
+  },
+  contentContainer: {
+    flex: 1,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  input: {
+    height: 40,
+    width: 200,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  addBtn: {
     position: 'absolute',
-  },
-});
+    right: 0,
+    bottom: 0,
+  }
+
+})
