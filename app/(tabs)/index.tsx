@@ -1,10 +1,9 @@
 import { type Transaction, useDB } from '@/hooks/useDB';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Image, StyleSheet, Platform, View, Text, FlatList, Button, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, Pressable, TextInput } from 'react-native-gesture-handler';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import InputForm from '@/components/InputForm';
   
@@ -24,21 +23,7 @@ export default function HomeScreen() {
     },[]),
   )
 
-    // ref
-    const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-    // callbacks
-    const handlePresentModalPress = useCallback(() => {
-      bottomSheetModalRef.current?.present();
-    }, []);
-    const handleSheetChanges = useCallback((index: number) => {
-      console.log('handleSheetChanges', index);
-    }, []);
-
-  const addTransaction = async () => {
-    //const result = await insertTransaction(transaction)
-    //console.log('Transaction added',result)
-  }
 
   const loadTransactions = async () => {
     const result = await getAllTransactions()
@@ -49,14 +34,13 @@ export default function HomeScreen() {
 
   return (
     <GestureHandlerRootView>
-    <SafeAreaView style={styles.container}>
-      <View style={styles.CardContainer}>
-        <Text style={{flex:1}}>
-          Home Screen
-        </Text>
-      </View>
-      <BottomSheetModalProvider>
-        <View style={styles.ListContainer}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.CardContainer}>
+          <Text style={{flex:1}}>
+            Home Screen
+          </Text>
+        </View>
+      <View style={styles.ListContainer}>
           <FlatList
             data={transactions}
             renderItem={({ item }) => 
@@ -73,38 +57,14 @@ export default function HomeScreen() {
         
           <Pressable
             style={styles.addBtn}
-            onPress={handlePresentModalPress}
+            onPress={()=> router.push('/newTransaction')}
           >
             <Ionicons name="add-circle" size={60} color="blue" />
           </Pressable>
-          <BottomSheetModal
-            ref={bottomSheetModalRef}
-            onChange={handleSheetChanges}
-          >
-                <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <BottomSheetView style={styles.contentContainer}>
-                <Text>New Expense 🎉</Text>
-                <InputForm title="Type"/>
-                <InputForm title="Amount"/>
-                <InputForm title="Description"/>
-                <InputForm title="Date & Time"/>
-  
-              <View style={{flexDirection:'row'}}>
-                <Button title="Add" onPress={addTransaction}/>
-              </View>
-            </BottomSheetView>
-            </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
-        </BottomSheetModal>
-        </View>
+      </View>
       
-        </BottomSheetModalProvider>
         
-    </SafeAreaView>
+      </SafeAreaView>
     </GestureHandlerRootView>
   )
 }
