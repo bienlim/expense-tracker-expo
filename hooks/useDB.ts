@@ -2,70 +2,82 @@ import * as SQLite from 'expo-sqlite';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 
 
-export interface Transaction {
+export interface Records {
     id?: number;
-    date: Date;
-    type: "income" | "expense";
+    dateTime: Date;
+    type: "income" | "expense" | "transfer";
     amount: number | null;
-    description: string | null;
-    category?: "Food" | "Transport" | "Entertainment" | "Others";
+    account: string | null;
+    category?: string;
+    note: string | null;
 }
 
 export const useDB = () => {
-    const db = SQLite.openDatabaseSync('transaction.db');
+    const db = SQLite.openDatabaseSync('records.db');
     useDrizzleStudio(db);
 
     useEffect(() => {
         initDB();
-        
-        //debugDB()
     },[])
 
     const initDB = () => {
-      const sql = `CREATE TABLE IF NOT EXISTS transactions (
+      const sql = `CREATE TABLE IF NOT EXISTS records (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT,
+                    dateTime TEXT,
                     type TEXT,
                     amount REAL,
-                    description TEXT,
-                    category TEXT
+                    account TEXT,
+                    category TEXT,
+                    note TEXT
                 )`
     
       db.execAsync(sql).then(()=> console.log('table created')).catch((e)=> console.log(e))
     }
 
-    const insertTransaction = (transaction: Transaction) => {
-        const sql = 'INSERT INTO transactions (type, date, amount, description, category) VALUES (?, ?, ?, ?, ?)'
-        const args = [transaction.type, transaction.date.toISOString(), transaction.amount ?? 0, transaction.description ?? '', transaction.category ?? '']
-        db.runAsync(sql, args)
+    const insertRecord = (records: Records) => {
+        const sql = 'INSERT INTO records (dateTime, type,  amount, account, category, note) VALUES (?, ?, ?, ?, ?, ?)'
+        const args = [
+            records.dateTime.toISOString(), 
+            records.type, 
+            records.amount ?? 0, 
+            records.account ?? '',
+            records.category ?? '',
+            records.note ?? '']
+        db.runAsync(sql, args).catch((e)=> console.log(e))
     }
 
-    const getAllTransactions = () => {
-      const sql = 'SELECT * FROM transactions ORDER BY date DESC'
-      return db.getAllAsync(sql).then((result) => result as Transaction[])
+    const getAllRecords = () => {
+      const sql = 'SELECT * FROM records ORDER BY dateTime DESC'
+      return db.getAllAsync(sql).then((result) => result as Records[])
       
     };
 
-    const getTransaction = (id: number) => {
-        const sql = 'SELECT * FROM transactions WHERE id = ?'
-        return db.getAllAsync(sql, [id]).then((result) => result[0] as Transaction)
+    const getRecord = (id: number) => {
+        const sql = 'SELECT * FROM records WHERE id = ?'
+        return db.getAllAsync(sql, [id]).then((result) => result[0] as Records)
     }
 
-    const updateTransaction = (transaction: Transaction) => {
-        const sql = 'UPDATE transactions SET type = ?, date = ?, amount = ?, description = ?, category = ? WHERE id = ?'
-        const args = [transaction.type, transaction.date.toISOString(), transaction.amount ?? null, transaction.description ?? null, transaction.category ?? '', transaction.id ?? 0]
+    const updateRecord = (record: Records) => {
+        const sql = 'UPDATE records SET dateTime = ?, type = ?,  amount = ?, account =?,  category = ?, note = ? WHERE id = ?'
+        const args = [
+            record.dateTime.toISOString(), 
+            record.type, 
+            record.amount ?? null,
+            record.account ?? '', 
+            record.category ?? '', 
+            record.note ?? null, 
+            record.id ?? 0]
         db.runAsync(sql, args)
     }
 
 
     return {
-      insertTransaction,
-      getAllTransactions,
-      updateTransaction,
-      getTransaction
+      insertRecord,
+      getAllRecords,
+      updateRecord,
+      getRecord
     }
 }

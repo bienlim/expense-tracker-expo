@@ -1,199 +1,297 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Button, StyleSheet, Pressable } from 'react-native';
+import { View, TextInput, Text, Pressable, TouchableOpacity, Keyboard} from 'react-native';
 import DatePicker from 'react-native-date-picker';
-import { type Transaction, useDB } from '@/hooks/useDB';
+import { type Records, useDB } from '@/hooks/useDB';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { recordFormStyles } from '@/styles/recordFormStyles';
+import { numPadStyles } from '@/styles/numPadStyles';
+import { Ionicons } from '@expo/vector-icons';
+import { evaluate } from 'mathjs';
+import DropDownPicker from 'react-native-dropdown-picker';
+
 
 const NewTransaction = () => {
-  const [transaction, setTransaction] = useState<Transaction>({
+const [record, setRecord] = useState<Records>({
+    id: undefined,
     type: 'expense',
     amount: null,
-    description: null,
-    date: new Date(),
+    note: null,
+    dateTime: new Date(),
+    account: '',
   });
+  const [input, setInput] = useState('');
 
-  const { insertTransaction } = useDB();
+  const { insertRecord } = useDB();
   const [openDatePicker, setOpenDatePicker] = useState(false)
 
-  const handleAmountChange = (text: string) => {
-    const numericValue: unknown= text.replace(/[^0-9.]/g, "").replace(/(\..*?)\..*/g, "$1");
-    setTransaction({ ...transaction, amount: numericValue as number});
-  };
 
-  const handleTypeChange = (type: Transaction['type']) => {
-    setTransaction({ ...transaction, type });
+  const [openAccount, setOpenAccount] = useState(false);
+  const [account, setAccount] = useState<string | null>(null);
+  const [allAccounts, setAllAccounts] = useState([
+      {label: 'Kcash', value: 'Kcash'},
+      {label: 'BDO', value: 'BDO'},
+      {label: 'PNB', value: 'PNB'},
+  ]);
+
+  const [openCategory, setOpenCategory] = useState(false);
+  const [category, setCategory] = useState<string | null>(null);
+  const [allCategory, setAllCategory] = useState([
+      {label: 'Food', value: 'Food'},
+      {label: 'Transpo', value: 'Transpo'},
+      {label: 'Entertainment', value: 'Entertainment'},
+  ]);
+
+  // Actions
+
+  const handleTypeChange = (type: Records['type']) => {
+    setRecord({ ...record, type });
   }
 
-  const handleCategoryChange = (category: Transaction['category']) => {
-    setTransaction({ ...transaction, category });
+  const handleCategoryChange = (category: Records['category']) => {
+    setRecord({ ...record, category });
   }
 
-  const handleDescriptionChange = (description:Transaction['description']) => {
-    setTransaction({ ...transaction, description });
+  const handleNoteChange = (note:Records['note']) => {
+    setRecord({ ...record, note });
   }
 
-  const addTransaction = async () => {
-    // Add transaction logic
-    const result = await insertTransaction(transaction);
-    console.log('Transaction added', result);
+  const handleAccountChange = (account:Records['account']) => {
+    setRecord({ ...record, account });
+    console.log('account', account) 
+  }
+
+  const addRecord = async () => {
+    const result = await insertRecord({...record, account, category});
+    console.log('Record added', {...record, account, category});
     router.back();
   };
 
+  const handlePress = (value: string) => {
+    let newInput:string;
+    Keyboard.dismiss();
+    console.log("Check periods",input.split(/[0-9]/).at(-2))
+    
+    // # Avoid sequential operators
+    if(
+      ['+','-','*','/'].includes(value) 
+      && ['+','-','*','/','.'].includes(input.at(-1) ?? '')
+    ){
+      newInput = input.slice(0, -1) + value;
+    // ## Avoid multiple periods
+    } else if (value === '.' && input.replace(/[0-9]/g, '').at(-1) === '.') {
+      newInput = input
+    } else {  
+      newInput = input + value
+    }
+
+    setInput(newInput);
+
+    try {
+      const evalResult = evaluate(newInput).toFixed(2); // Note: Using eval can be dangerous. Use a proper math parser in production.
+      setRecord({ ...record, amount: evalResult});
+    } catch (error) {
+      setRecord({ ...record, amount: null});
+    }
+      
+    console.log('transaction', record.amount)
+  };
+
+  const handleClear = () => {
+    Keyboard.dismiss();
+    const newInput = input.slice(0, -1);
+    setInput(newInput);
+    try {
+      const evalResult = evaluate(newInput).toFixed(2); // Note: Using eval can be dangerous. Use a proper math parser in production.
+      setRecord({ ...record, amount: evalResult});
+    } catch (error) {
+      setRecord({ ...record, amount: null});
+    }
+  };
+
+  const handleCalculate = () => {
+    try {
+      const evalResult = evaluate(input).toFixed(2); // Note: Using eval can be dangerous. Use a proper math parser in production.
+      setRecord({ ...record, amount: evalResult});
+    } catch (error) {
+      setRecord({ ...record, amount: null});
+      alert('Invalid expression');
+    }
+  };
+
+  
+  // # Sub-components
+  const TypeButton = ({type}:{type:Records['type']}) => (
+      <Pressable 
+        style={
+           
+          record.type === type ? recordFormStyles.typeActiveBtn : recordFormStyles.typeBtn
+        } 
+        onPress={() => handleTypeChange(type)}
+        >
+          <Text>{type}</Text>
+      </Pressable>
+  )
+
+
+  const CategoryButton = ({category}:{category:Records['category']}) => (
+    <Pressable 
+        style={
+          [recordFormStyles.typeBtn, 
+          {backgroundColor:'#ffffff'}]
+        } 
+        onPress={() => handleCategoryChange(category)}
+        >
+          <Text>{category}</Text>
+      </Pressable>
+  )
+
+  const NumPadKey = ({ keyLabel }: { keyLabel: string }) => (
+    <TouchableOpacity style={numPadStyles.button} onPress={() => handlePress(keyLabel)}>
+      <Text style={numPadStyles.buttonText}>{keyLabel}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.btnContainer}>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.type==='income'?'cyan':''}]
-          } 
-          onPress={() => handleTypeChange('income')}
-          >
-            <Text>Income</Text>
+    <SafeAreaView style={recordFormStyles.container}>
+
+      {/* Save or Cancel */}
+      <View style={recordFormStyles.saveContainer}>
+        <Pressable style={recordFormStyles.btn} onPress={router.back}>
+          <Text>Cancel</Text>
         </Pressable>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.type==='expense'?'cyan':''}]
-          } 
-          onPress={() => handleTypeChange('expense')}
-          >
-            <Text>Expense</Text>
-        </Pressable>
-      </View>
-      <Text>Category</Text>
-      <View style={styles.btnContainer}>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.category==='Food'?'cyan':''}]
-          } 
-          onPress={() => handleCategoryChange('Food')}
-          >
-            <Text>Food</Text>
-        </Pressable>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.category==='Transport'?'cyan':''}]
-          } 
-          onPress={() => handleCategoryChange('Transport')}
-          >
-            <Text>Transport</Text>
-        </Pressable>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.category==='Entertainment'?'cyan':''}]
-          } 
-          onPress={() => handleCategoryChange('Entertainment')}
-          >
-            <Text>Entertainment</Text>
-        </Pressable>
-        <Pressable 
-          style={
-            [styles.btn, 
-            {backgroundColor:transaction.category==='Others'?'cyan':''}]
-          } 
-          onPress={() => handleCategoryChange('Others')}
-          >   
-            <Text>Others</Text>
+        <View style={{flex:2}}/>
+        <Pressable style={recordFormStyles.btn} onPress={addRecord} disabled={!record.amount}>
+          <Text>Add</Text>
         </Pressable>
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.text}>Amount</Text>
-        <TextInput
-          style={styles.input}
-          placeholder='expense'
-          onChangeText={handleAmountChange}
-          value={transaction.amount?.toString()}
-          keyboardType="numeric"
-          autoFocus
-        />
+       {/* Type */}
+      <View style={recordFormStyles.typeContainer}>
+        <TypeButton type='income'/>
+        <TypeButton type='expense'/>
+        <TypeButton type='transfer'/>
       </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.text}>Description</Text>
-        <TextInput
-          style={styles.input}
-          placeholder='Description'
-          value={transaction.description ?? ''}
-          onChangeText={handleDescriptionChange}
-  
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text  style={styles.text}>Date</Text>
-        <TextInput style={styles.input} value={transaction.date?.toDateString()} onPress={() => setOpenDatePicker(true)} />
+    
+      {/* Date Picker */}
+      <TouchableOpacity style={recordFormStyles.dateContainer} onPress={() => setOpenDatePicker(true)}>
+        <Text  style={{flex:1, textAlign:'center'}}> {record.dateTime?.toDateString()} </Text>
+        <Text> </Text>
+        <Text style={{flex:1, textAlign:'center'}}>{record.dateTime?.toLocaleTimeString()} </Text>
         <DatePicker
           modal
           open={openDatePicker}
-          date={transaction.date}
+          date={record.dateTime}
           onConfirm={(date) => {
             setOpenDatePicker(false)
-            setTransaction({ ...transaction, date })
+            setRecord({ ...record, dateTime: date })
           }}
           onCancel={() => {
-            setTransaction({ ...transaction })
+            setOpenDatePicker(false)
+            setRecord({ ...record })
           }}
         />
+      </TouchableOpacity>
+
+       {/* Input Ammount */}
+      <View style={recordFormStyles.inputContainer}>
+          <Text style={{flex:1, fontSize: 40, fontWeight: 'bold', textAlign: 'center'}}>
+            {record.type==='expense'?"-":
+              record.type==='income'?"+":""
+              }</Text>
+          <Text style={{flex:3, fontSize: 40, textAlign: 'right'}}>{record.amount?.toLocaleString('en-US')}</Text>
+          <View style={{flex:1, paddingTop:10,alignItems:'center'}}>
+            <Ionicons style={{flex:1}} name="mic-circle-sharp" size={24} color="black" />
+            <Ionicons style={{flex:1}}name="camera" size={24} color="black" />
+          </View>
       </View>
-      <View style={styles.btnContainer}>
-        <Pressable style={styles.btn} onPress={router.back}>
-          <Text>Cancel</Text>
-        </Pressable>
-        <Pressable style={styles.btn} onPress={addTransaction} disabled={!transaction.amount}>
-          <Text>Add</Text>
-        </Pressable>
+
+      {/* Category buttons */}
+      <View style={recordFormStyles.typeContainer}>
+        <View style={recordFormStyles.shadow}>
+             <DropDownPicker
+                      style={{borderWidth:0}}
+                      open={openAccount}
+                      value={account}
+                      items={allAccounts}
+                      setOpen={setOpenAccount}
+                      setValue={setAccount}
+                      setItems={setAllAccounts}
+                      placeholder={'Account'}
+                  />
+        </View>
+        <View style={recordFormStyles.shadow}>
+            <DropDownPicker
+                      style={{borderWidth:0}}
+                      open={openCategory}
+                      value={category}
+                      items={allCategory}
+                      setOpen={setOpenCategory}
+                      setValue={setCategory}
+                      setItems={setAllCategory}
+                      placeholder={'Category'}
+                  />
+        </View>
+      </View>
+
+          
+      
+      
+
+      {/* Notes */}
+
+        <TextInput
+          multiline
+          numberOfLines={4}
+          maxLength={200}
+          style={recordFormStyles.note}  
+          placeholder='Write notes here'
+          value={record.note ?? ''}
+          onChangeText={handleNoteChange}
+
+        />
+
+
+      {/* Number Pad */}
+      <View style={numPadStyles.container}>
+        <View style={[numPadStyles.inputContainer]}>
+       
+                <Text style={numPadStyles.input} >{input}</Text>
+                <TouchableOpacity  style={numPadStyles.cancel} onPress={handleClear}>
+                    <Ionicons name="backspace-outline" size={38} color="black" />
+                </TouchableOpacity>
+            
+        </View>  
+        {/* {result !== null && <Text style={numPadStyles.result}>Result: {result}</Text>} */}
+        <View style={numPadStyles.row}>
+          <NumPadKey keyLabel="+" />
+          <NumPadKey keyLabel="7" />
+          <NumPadKey keyLabel="8" />
+          <NumPadKey keyLabel="9" />
+        </View>
+        <View style={numPadStyles.row}>
+          <NumPadKey keyLabel="-" />
+          <NumPadKey keyLabel="4" />
+          <NumPadKey keyLabel="5" />
+          <NumPadKey keyLabel="6" />
+        </View>
+        <View style={numPadStyles.row}>
+          <NumPadKey keyLabel="*" />
+          <NumPadKey keyLabel="1" />
+          <NumPadKey keyLabel="2" />
+          <NumPadKey keyLabel="3" />
+        </View>
+        <View style={numPadStyles.row}>
+          <NumPadKey keyLabel="/" />
+          <NumPadKey keyLabel="0" />
+          <NumPadKey keyLabel="." />
+          <TouchableOpacity style={numPadStyles.button} onPress={handleCalculate}>
+            <Text style={numPadStyles.buttonText}>=</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container:{
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  inputContainer:{
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    height: 40,
-    width: '100%',
-    marginBottom: 10,
-  },
-  text:{
-    flex: 1,
-    paddingVertical: 13,
-    alignContent: 'space-between',  
-    justifyContent: 'flex-start',
-  },
-  input:{
-    flex: 3,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-  },
-  datePicker: {
-    width: '100%',
-  },
-  btn: {
-    flex: 1,
-    margin: 7,
-    borderWidth: 1,
-    borderBlockColor: 'blue',
-    borderRadius: 8,
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-
-});
 
 export default NewTransaction;

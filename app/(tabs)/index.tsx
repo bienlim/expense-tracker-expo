@@ -1,4 +1,4 @@
-import { type Transaction, useDB } from '@/hooks/useDB';
+import { type Records, useDB } from '@/hooks/useDB';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Image, StyleSheet, Platform, View, Text, FlatList, Button, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard} from 'react-native';
@@ -9,8 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 
 export default function HomeScreen() {
-  const { getAllTransactions } = useDB()
-  const [transactions, setTransactions] = useState<Transaction[]>()
+  const { getAllRecords } = useDB()
+  const [transactions, setTransactions] = useState<Records[]>()
   const [totalExpense, setTotalExpense] = useState<number>()
   const [totalIncome, setTotalIncome] = useState<number>()
   const [balance, setBalance] = useState<number>()
@@ -28,13 +28,13 @@ export default function HomeScreen() {
   );
 
   const loadTransactions = async () => {
-    const result = await getAllTransactions()
+    const result = await getAllRecords()
     console.log('Transactions',result)
     setTransactions(result);
     return result;
   }
 
-  const calculateTotalExpense = async (loadedTransactions: Transaction[]) => {
+  const calculateTotalExpense = async (loadedTransactions: Records[]) => {
     const amount = (loadedTransactions ?? [])
       .filter((transaction) => transaction.type === 'expense')
       .reduce((acc, transaction) => acc + (transaction.amount || 0), 0)
@@ -44,7 +44,7 @@ export default function HomeScreen() {
     return Number.parseFloat(amount)
   }
 
-  const calculateTotalIncome = async (loadedTransactions: Transaction[]) => {
+  const calculateTotalIncome = async (loadedTransactions: Records[]) => {
     const amount = (loadedTransactions ?? [])
       .filter((transaction) => transaction.type === 'income')
       .reduce((acc, transaction) => acc + (transaction.amount || 0), 0)
@@ -60,12 +60,18 @@ export default function HomeScreen() {
     setBalance(balance)
   }
 
-  const transactionItem = ({ item }: { item: Transaction }) => (
+  const transactionItem = ({ item }: { item: Records }) => (
     <Pressable style={styles.transaction} onPress={() => router.push(`/transaction/${item.id}`)}>
       <View style={styles.transactionDetails}>
-        <Text style={styles.description}>{item.description}</Text>
+        <Text style={styles.description}>{item.note}</Text>
         <Text style={styles.category}>{item.category}</Text>
-        <Text style={styles.date}>{new Date(item.date).toLocaleDateString()}</Text>
+        <Text style={styles.date}>
+          {new Date(item.dateTime).toLocaleDateString('en-US',{
+            year: 'numeric', // "2023"
+            month: 'long', // "October"
+            day: 'numeric', // "30"
+          })}
+        </Text>
       </View>
       <Text style={[styles.amount, { color: item.type === "expense" ? "red" : "green" }]}>
         {item.type === "expense" ? "-" : ""}{item.amount?.toLocaleString()}
@@ -105,8 +111,6 @@ export default function HomeScreen() {
             <Ionicons name="add-circle" size={60} color="blue" />
           </Pressable>
       </View>
-      
-        
       </SafeAreaView>
     </GestureHandlerRootView>
   )
@@ -114,11 +118,13 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    borderWidth: 0,
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f9fa',
+    padding: 0,
+    backgroundColor: 'white',
   },
   cardContainer: {
+    borderBottomWidth: 1,
     flex: 1,
     backgroundColor: '#ffffff',
     borderRadius: 8,
@@ -138,11 +144,17 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   ListContainer: {
+    borderWidth: 0,
     flex: 2,
-    backgroundColor: 'grey',
-    margin: 0,
+    backgroundColor: '#f8f9fa',
+    margin: 4,
     padding: 8,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 2,
 
   },
   transaction: {
@@ -151,13 +163,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     marginVertical: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
   },
   transactionDetails: {
     flex: 1,
