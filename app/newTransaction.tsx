@@ -56,11 +56,6 @@ const [record, setRecord] = useState<Records>({
     setRecord({ ...record, note });
   }
 
-  const handleAccountChange = (account:Records['account']) => {
-    setRecord({ ...record, account });
-    console.log('account', account) 
-  }
-
   const addRecord = async () => {
     const result = await insertRecord({...record, account, category});
     console.log('Record added', {...record, account, category});
