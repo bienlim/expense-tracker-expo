@@ -13,7 +13,21 @@ export interface Records {
     account: string | null;
     category?: string;
     note: string | null;
-}
+};
+
+export interface Category {
+  id?: number;
+  category: string;
+};
+
+export interface Account {
+  id?: number;
+  account: string;
+  type: "Cash" | "Saving" | "Credit Card";
+  balance: number;
+};
+
+
 
 export const useDB = () => {
     const db = SQLite.openDatabaseSync('records.db');
@@ -24,7 +38,7 @@ export const useDB = () => {
     },[])
 
     const initDB = () => {
-      const sql = `CREATE TABLE IF NOT EXISTS records (
+      const createRecordsTable = `CREATE TABLE IF NOT EXISTS records (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     dateTime TEXT,
                     type TEXT,
@@ -32,9 +46,23 @@ export const useDB = () => {
                     account TEXT,
                     category TEXT,
                     note TEXT
-                )`
+                );`
+      const createCategoryTable = `CREATE TABLE IF NOT EXISTS category (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    category TEXT
+                );`  
+      const createAccountTable = `CREATE TABLE IF NOT EXISTS account (  
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    account TEXT,
+                    type TEXT,
+                    balance REAL
+                );`  
     
-      db.execAsync(sql).then(()=> console.log('table created')).catch((e)=> console.log(e))
+      db.execAsync(
+          createRecordsTable +
+          createCategoryTable +
+          createAccountTable
+        ).then(()=> console.log('table created')).catch((e)=> console.log(e))
     }
 
     const insertRecord = (records: Records) => {
@@ -71,6 +99,26 @@ export const useDB = () => {
             record.note ?? null, 
             record.id ?? 0]
         db.runAsync(sql, args)
+    }
+
+    const insertCategory = (category: Category) => {
+      const sql = 'INSERT INTO category (category) VALUES (?)'
+      db.runAsync(sql, [category.category])
+    }
+
+    const getAllCategory = () => {
+      const sql = 'SELECT * FROM category'
+      return db.getAllAsync(sql).then((result) => result as Category[])
+    }
+
+    const insertAccount = (account: Account) => {
+      const sql = 'INSERT INTO account (account, type, balance) VALUES (?, ?, ?)'
+      db.runAsync(sql, [account.account, account.type, account.balance])
+    }
+
+    const getAllAccount = () => {
+      const sql = 'SELECT * FROM account'
+      return db.getAllAsync(sql).then((result) => result as Account[])
     }
 
 
