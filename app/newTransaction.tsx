@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TextInput, Text, Pressable, TouchableOpacity, Keyboard} from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { type Records, useDB } from '@/hooks/useDB';
@@ -12,7 +12,9 @@ import DropDownPicker from 'react-native-dropdown-picker';
 
 
 const NewTransaction = () => {
-const [record, setRecord] = useState<Records>({
+
+  // # State
+  const [record, setRecord] = useState<Records>({
     id: undefined,
     type: 'expense',
     amount: null,
@@ -22,25 +24,22 @@ const [record, setRecord] = useState<Records>({
   });
   const [input, setInput] = useState('');
 
-  const { insertRecord } = useDB();
+  const { insertRecord, getAllCategory, getAllAccount } = useDB();
   const [openDatePicker, setOpenDatePicker] = useState(false)
 
 
   const [openAccount, setOpenAccount] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
-  const [allAccounts, setAllAccounts] = useState([
-      {label: 'Kcash', value: 'Kcash'},
-      {label: 'BDO', value: 'BDO'},
-      {label: 'PNB', value: 'PNB'},
-  ]);
+  const [allAccounts, setAllAccounts] = useState<any>([]);
 
   const [openCategory, setOpenCategory] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
-  const [allCategory, setAllCategory] = useState([
-      {label: 'Food', value: 'Food'},
-      {label: 'Transpo', value: 'Transpo'},
-      {label: 'Entertainment', value: 'Entertainment'},
-  ]);
+  const [allCategory, setAllCategory] = useState<any>([]);
+
+  useEffect(() => {
+    getCategories();
+    getAccounts();
+  },[])
 
   // Actions
 
@@ -114,6 +113,17 @@ const [record, setRecord] = useState<Records>({
     }
   };
 
+  const getCategories = async () => {
+    const result = await getAllCategory()
+    console.log('Categories',result)
+    setAllCategory(result.map((category) => ({label: category.category, value: category.id})));
+  }
+
+  const getAccounts = async () => {
+    const result = await getAllAccount()
+    console.log('Accounts',result)
+    setAllAccounts(result.map((account) => ({label: account.account, value: account.id})));
+  }
   
   // # Sub-components
   const TypeButton = ({type}:{type:Records['type']}) => (
