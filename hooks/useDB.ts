@@ -126,6 +126,10 @@ export const useDB = () => {
       insertRecord,
       getAllRecords,
       updateRecord,
-      getRecord
+      getRecord,
+      insertCategory,
+      getAllCategory,
+      insertAccount,
+      getAllAccount
     }
 }
