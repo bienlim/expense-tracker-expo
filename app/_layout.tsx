@@ -28,8 +28,7 @@ export default function RootLayout() {
   return (
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="newTransaction" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="transaction" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
   );

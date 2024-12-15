@@ -15,7 +15,7 @@ export const recordFormStyles = StyleSheet.create({
         },
         note:{
           flexDirection: 'row',
-          paddingHorizontal: 10,
+          paddingHorizontal: 15,
           height: 80,
           width: '100%',
           marginVertical: 10,
@@ -107,6 +107,8 @@ export const recordFormStyles = StyleSheet.create({
           borderBottomWidth: 0.2,
         },
         shadow:{
+          borderRadius: 8,
+          backgroundColor: '#ffffff',
           flex:1,
           marginHorizontal: 5,
           shadowColor: '#000',
