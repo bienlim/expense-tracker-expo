@@ -9,18 +9,31 @@ type AccountPickerProps = {
     handleAccount: (account:string, account_id: number) => void;
     setOpen: (open: boolean) => void;
     transfer: boolean;
+    handleAccountTo: (account:string, account_id: number) => void;
 }
 
-const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, setOpen, transfer}: AccountPickerProps) => {
+const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, setOpen, transfer , handleAccountTo}: AccountPickerProps) => {
     console.log('AccountPicker',  allAccounts)
     const handlePress = (account:string, id:number) => {
         handleAccount(account, id )
-        setOpen(false);
+        !transfer ?  setOpen(false) : accountFrom && accountTo ? setOpen(false) : null;
     }    
-    const renderItem = ({ item }: { item: Account }) => (
+    const renderItemFrom = ({ item }: { item: Account }) => (
+        <TouchableOpacity
+          style={item.account === accountFrom? AccountPickerStyles.activeBtn : AccountPickerStyles.Btn} // Added styles for visibility
+          onPress={() => handlePress(item.account, item.id)}
+        >
+          <Text style={{ color: 'black', fontSize:16 }}>{item.account}</Text>
+        </TouchableOpacity>
+      );
+    
+      const renderItemTo = ({ item }: { item: Account }) => (
         <TouchableOpacity
           style={item.account === accountTo? AccountPickerStyles.activeBtn : AccountPickerStyles.Btn} // Added styles for visibility
-          onPress={() => handlePress(item.account, item.id)}
+          onPress={() =>{
+            handleAccountTo(item.account, item.id);
+            accountTo = item.account;
+        }}
         >
           <Text style={{ color: 'black', fontSize:16 }}>{item.account}</Text>
         </TouchableOpacity>
@@ -30,24 +43,27 @@ const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, set
             <>
             {
             transfer? (
-                <View style={{ flexDirection: 'row', flex: 1, borderWidth: 1 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>From Account</Text>
-                      <FlatList
-                        data={allAccounts}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.id.toString()}
-                        numColumns={1}
-                    />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>To Account</Text>
-                      <FlatList
-                        data={allAccounts}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.id.toString()}
-                        numColumns={1}
-                    />
+                <View style={{flex:1}}>
+                    <Text style={{ textAlign:'center', fontSize: 18, color:'grey', paddingBottom:8}}>Select Account</Text>
+                    <View style={{ flexDirection: 'row', flex: 1 }}>
+                        <View style={{ flex: 1}}>
+                        <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>From</Text>
+                        <FlatList
+                            data={allAccounts}
+                            renderItem={renderItemFrom}
+                            keyExtractor={(item) => item.id.toString()}
+                        />
+                        </View>
+                        <View style={{borderRightWidth:0}} />
+                        <View style={{ flex: 1 }}>
+                        <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>To</Text>
+                        <FlatList
+                            data={allAccounts}
+                            renderItem={renderItemTo}
+                            keyExtractor={(item) => item.id.toString()}
+  
+                        />
+                        </View>
                     </View>
                   </View>
             ) : (
@@ -55,7 +71,7 @@ const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, set
                 <Text style={{textAlign:'center', fontSize: 18, color:'grey', paddingBottom:8}}>Select Account</Text>
                     <FlatList
                         data={allAccounts}
-                        renderItem={renderItem}
+                        renderItem={renderItemFrom}
                         keyExtractor={(item) => item.id.toString()}
                         numColumns={2}
                     />

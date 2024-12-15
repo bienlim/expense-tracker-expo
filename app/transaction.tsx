@@ -47,8 +47,12 @@ const NewTransaction = () => {
   const [openAccount, setOpenAccount] = useState<boolean>(false);  
   const [accountId, setAccountId] = useState<number>();
   const [allAccounts, setAllAccounts] = useState<Account[]>([]);
-  const [openAccount2, setOpenAccount2] = useState<boolean>(false);  
-  const [accountId2, setAccountId2] = useState<number>();
+  const [openAccount2, setOpenAccount2] = useState<boolean>(false); 
+
+  const [accountTo, setAccountTo] = useState<{account?:string, account_id?: number}>({
+    // account: 'BDO',
+    // account_id: 3
+  });
 
   const [openCategory, setOpenCategory] = useState(false);
   const [allCategory, setAllCategory] = useState<Category[]>([]);
@@ -72,7 +76,7 @@ const NewTransaction = () => {
 
       if(record.type === 'transfer'){
         await insertRecord({...record, amount: -record.amount, account_id: accountId, category_id: 12});
-        await insertRecord({...record, amount: record.amount, account_id: accountId2, category_id: 12});
+        await insertRecord({...record, amount: record.amount, account_id: accountTo?.account_id, category_id: 12});
       } else {
       await insertRecord({...record, account_id: accountId, category_id: categoryId});
       }
@@ -131,6 +135,11 @@ const NewTransaction = () => {
 
   const handleAccount = (account:string, account_id: number) => {
     setRecord({ ...record, account, account_id });
+  }
+
+  const handleAccountTo = (account:string, account_id: number) => {
+    console.log('AccountTo',account)
+    setAccountTo({ account, account_id });
   }
 
   const getAccounts = async () => {
@@ -225,7 +234,7 @@ const NewTransaction = () => {
                 onPress={() => 
                   setOpenAccount(true)}
                 > 
-                <Text style={{fontSize:16}}>{accountId2 ?? 'Select Category'}</Text>
+                <Text style={{fontSize:16}}>{accountTo.account ?? 'Select Category'}</Text>
               </TouchableOpacity>
               :
               
@@ -258,11 +267,13 @@ const NewTransaction = () => {
       { openAccount ?
         <AccountPicker 
           accountFrom={record.account ?? ''} 
-          accountTo={record.account ?? ''} 
+          accountTo={accountTo?.account ?? ''} 
           allAccounts={allAccounts} 
           handleAccount={handleAccount} 
           setOpen={setOpenAccount}
-          transfer={record.type==='transfer'}/>:
+          transfer={record.type==='transfer'}
+          handleAccountTo={handleAccountTo}
+          />:
         openCategory ?
         <CategoryPicker category={record.category ?? ''} allCategory={allCategory} handleCategory={handleCategory} setOpen={setOpenCategory}/>:
         <NumPad calculatorInput={calculatorInput} handlePress={handlePress} handleClear={handleClear} />
