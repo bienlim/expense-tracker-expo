@@ -30,7 +30,7 @@ const NewTransaction = () => {
       };
       loadTransaction();
     }
-  },[id, getRecord])
+  },[id])
 
   // # State
   const [record, setRecord] = useState<Records>({
@@ -71,7 +71,7 @@ const NewTransaction = () => {
     console.log('Record', record);
     console.log('accounTo', accountTo);
     if (id) {
-      await updateRecord({...record, account_id: accountId, category_id: categoryId});
+      await updateRecord({...record});
     } else {
 
       if(record.type === 'transfer'){
