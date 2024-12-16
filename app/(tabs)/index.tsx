@@ -158,7 +158,7 @@ export default function HomeScreen() {
       </View>
       <View>
         <Text style={[styles.amount]}>
-          {item.type === "expense" ? "-" : ""} P {item.amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          P {item.amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </Text>
         <Text style={{textAlign:'right',color:'grey'}}>
           {item.account}
