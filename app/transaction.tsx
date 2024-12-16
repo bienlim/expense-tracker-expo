@@ -76,7 +76,7 @@ const NewTransaction = () => {
 
       if(record.type === 'transfer'){
         await insertRecord({...record, amount: -record.amount, category_id: 12});
-        await insertRecord({...record, amount: record.amount, category_id: 12});
+        await insertRecord({...record, amount: record.amount, account_id: accountTo.account_id, category_id: 12});
       } else if (record.type === 'expense') {
       await insertRecord({...record, amount: -record.amount});
       } else {
