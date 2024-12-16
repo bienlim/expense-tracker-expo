@@ -1,5 +1,4 @@
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native'
-import { numPadStyles } from '@/styles/numPadStyles';
 import type { Account } from '@/hooks/useDB';
 
 
