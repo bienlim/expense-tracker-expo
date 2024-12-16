@@ -2,80 +2,91 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native
 import { numPadStyles } from '@/styles/numPadStyles';
 import type { Account } from '@/hooks/useDB';
 
+
+
+type AccountItemProps = {
+    account: string;
+    isActive: boolean;
+    onPress: () => void;
+    transfer?: boolean;
+}
+type AccountListProps = {
+    accounts: Account[];
+    selectedAccount: string;
+    handlePress: (account: string, accountId: number, transfer?:boolean) => void;
+    title: string;
+    transfer?: boolean;
+    numColumns: number;
+};
 type AccountPickerProps = {
     accountFrom: string;
     accountTo: string;
     allAccounts: Account[];
-    handleAccount: (account:string, account_id: number) => void;
-    setOpen: (open: boolean) => void;
+    handleAccount: (account:string, account_id: number, transfer?:boolean) => void;
     transfer: boolean;
-    handleAccountTo: (account:string, account_id: number) => void;
 }
 
-const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, setOpen, transfer , handleAccountTo}: AccountPickerProps) => {
-    console.log('AccountPicker',  allAccounts)
-    const handlePress = (account:string, id:number) => {
-        handleAccount(account, id )
-        !transfer ?  setOpen(false) : accountFrom && accountTo ? setOpen(false) : null;
-    }    
-    const renderItemFrom = ({ item }: { item: Account }) => (
-        <TouchableOpacity
-          style={item.account === accountFrom? AccountPickerStyles.activeBtn : AccountPickerStyles.Btn} // Added styles for visibility
-          onPress={() => handlePress(item.account, item.id)}
-        >
-          <Text style={{ color: 'black', fontSize:16 }}>{item.account}</Text>
-        </TouchableOpacity>
-      );
-    
-      const renderItemTo = ({ item }: { item: Account }) => (
-        <TouchableOpacity
-          style={item.account === accountTo? AccountPickerStyles.activeBtn : AccountPickerStyles.Btn} // Added styles for visibility
-          onPress={() =>{
-            handleAccountTo(item.account, item.id);
-            accountTo = item.account;
-        }}
-        >
-          <Text style={{ color: 'black', fontSize:16 }}>{item.account}</Text>
-        </TouchableOpacity>
-      );
-    
+const AccountItem = ({account, isActive, onPress }: AccountItemProps) => (
+    <TouchableOpacity
+      style={isActive ? AccountPickerStyles.activeBtn : AccountPickerStyles.Btn}
+      onPress={onPress}
+    >
+      <Text style={{ color: 'black', fontSize:16 }}>{account}</Text>
+    </TouchableOpacity>
+  );
+
+const AccountList = ({ accounts, selectedAccount, handlePress, title , numColumns ,transfer}: AccountListProps) => {
+    const renderItem = ({ item }: { item: Account }) => (
+      <AccountItem
+        account={item.account}
+        isActive={item.account === selectedAccount}
+        onPress={() => handlePress(item.account, item.id, transfer)}
+      />
+    );
+  
+    return (
+      <View style={{ flex: 1 }}>
+        <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>{title}</Text>
+        <FlatList
+          data={accounts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={numColumns}
+          contentContainerStyle={{ flexGrow: 1 }}
+        />
+      </View>
+    );
+  };
+
+const AccountPicker = ({ accountFrom, accountTo, allAccounts, handleAccount, transfer}: AccountPickerProps) => {
       return (
             <>
-            {
-            transfer? (
-                <View style={{flex:1}}>
-                    <Text style={{ textAlign:'center', fontSize: 18, color:'grey', paddingBottom:8}}>Select Account</Text>
-                    <View style={{ flexDirection: 'row', flex: 1 }}>
-                        <View style={{ flex: 1}}>
-                        <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>From</Text>
-                        <FlatList
-                            data={allAccounts}
-                            renderItem={renderItemFrom}
-                            keyExtractor={(item) => item.id.toString()}
-                        />
-                        </View>
-                        <View style={{borderRightWidth:0}} />
-                        <View style={{ flex: 1 }}>
-                        <Text style={{ textAlign: 'center', fontSize: 18, color: 'grey', paddingBottom: 8 }}>To</Text>
-                        <FlatList
-                            data={allAccounts}
-                            renderItem={renderItemTo}
-                            keyExtractor={(item) => item.id.toString()}
-  
-                        />
-                        </View>
-                    </View>
-                  </View>
-            ) : (
-                <View>
-                <Text style={{textAlign:'center', fontSize: 18, color:'grey', paddingBottom:8}}>Select Account</Text>
-                    <FlatList
-                        data={allAccounts}
-                        renderItem={renderItemFrom}
-                        keyExtractor={(item) => item.id.toString()}
-                        numColumns={2}
-                    />
+            {transfer ? (
+                <View style={{ flexDirection: 'row', flex: 1 }}>
+                <AccountList
+                    accounts={allAccounts}
+                    selectedAccount={accountFrom}
+                    handlePress={handleAccount}
+                    title="From Account"
+                    numColumns={1}
+                />
+                <AccountList
+                    accounts={allAccounts}
+                    selectedAccount={accountTo}
+                    handlePress={handleAccount}
+                    title="To Account"
+                    transfer={true}
+                    numColumns={1}
+                />
                 </View>
+            ) : (
+                <AccountList
+                accounts={allAccounts}
+                selectedAccount={accountFrom}
+                handlePress={handleAccount}
+                title="Select Account"
+                numColumns={2}
+                />
             )}
             </>
       );

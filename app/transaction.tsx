@@ -27,8 +27,6 @@ const NewTransaction = () => {
         console.log('Transaction inital ID', result);
 
         setRecord({ ...result, dateTime: new Date(result.dateTime) });
-        setAccountId(result.account_id);
-        setCategoryId(result.category_id);
       };
       loadTransaction();
     }
@@ -47,7 +45,7 @@ const NewTransaction = () => {
   const [openAccount, setOpenAccount] = useState<boolean>(false);  
   const [accountId, setAccountId] = useState<number>();
   const [allAccounts, setAllAccounts] = useState<Account[]>([]);
-  const [openAccount2, setOpenAccount2] = useState<boolean>(false); 
+ 
 
   const [accountTo, setAccountTo] = useState<{account?:string, account_id?: number}>({
     // account: 'BDO',
@@ -133,13 +131,14 @@ const NewTransaction = () => {
     setAllCategory(result);
   }
 
-  const handleAccount = (account:string, account_id: number) => {
-    setRecord({ ...record, account, account_id });
-  }
-
-  const handleAccountTo = (account:string, account_id: number) => {
-    console.log('AccountTo',account)
-    setAccountTo({ account, account_id });
+  const handleAccount = (account:string, account_id: number,transfer:boolean) => {
+    console.log('Account', transfer,account)
+    if(transfer){
+      setAccountTo({ account, account_id });
+      accountTo.account && record.account ? setOpenAccount(false):null;
+    } else {
+      setRecord({ ...record, account, account_id });
+    }
   }
 
   const getAccounts = async () => {
@@ -277,7 +276,7 @@ const NewTransaction = () => {
           handleAccount={handleAccount} 
           setOpen={setOpenAccount}
           transfer={record.type==='transfer'}
-          handleAccountTo={handleAccountTo}
+          
           />:
         openCategory ?
         <CategoryPicker category={record.category ?? ''} allCategory={allCategory} handleCategory={handleCategory} setOpen={setOpenCategory}/>:
