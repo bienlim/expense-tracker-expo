@@ -168,7 +168,7 @@ export default function HomeScreen() {
   );
 
   const sectionHeader = ({section: {date}}) => (
-    <Text style={[styles.date,{textAlign:'center',borderBottomWidth:0.3,padding:4}]}>
+    <Text style={[styles.date,{textAlign:'center',borderBottomWidth:0.3,padding:4,backgroundColor: '#f8f9fa', opacity: 80}]}>
           {new Date(date).toLocaleDateString('en-US',{
             year: 'numeric', // "2023"
             month: 'long', // "October"
