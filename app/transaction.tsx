@@ -25,7 +25,7 @@ const NewTransaction = () => {
       const loadTransaction = async () => {
         const result = await getRecord(+id);
         console.log('Transaction inital ID', result);
-
+        setCalculatorInput(result.amount?.toString() ?? '');
         setRecord({ ...result, dateTime: new Date(result.dateTime) });
       };
       loadTransaction();
@@ -117,13 +117,21 @@ const NewTransaction = () => {
   };
 
   const handleCalculate = (input:string) => {
-    try {
-      const evalResult = evaluate(input).toFixed(2); 
-      setRecord({ ...record, amount: evalResult});
-    } catch (error) {
-      setRecord({ ...record, amount: null});
-    }
-  };
+      let modifiedInput = input;
+
+      const isExpense = record.type === 'expense';
+      const isTransferOut = record.type === 'transfer' && record.category_id === 12;
+      const isEdit = id;
+      if (isExpense || isTransferOut){
+        modifiedInput = `-1*(${input})`;
+      }
+      try {
+        const evalResult = evaluate(modifiedInput).toFixed(2); 
+        setRecord({ ...record, amount: evalResult});
+      } catch (error) {
+        setRecord({ ...record, amount: null});
+      }
+    };
 
   const handleCategory = (category:string, category_id: number) => {
     setRecord({ ...record, category, category_id });
@@ -241,7 +249,7 @@ const NewTransaction = () => {
           <Ionicons name='caret-forward-outline' size={24} color='black'/>
         )}
         <View style={recordFormStyles.shadow}>
-            { record.type === 'transfer'?
+            { record.type === 'transfer' && !id?
               <TouchableOpacity 
                 style={{flex:1,borderWidth:0,alignItems:'center',justifyContent:'center', borderRadius:8}}
                 onPress={() => 
