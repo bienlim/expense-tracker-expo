@@ -68,18 +68,22 @@ const NewTransaction = () => {
   // Actions
 
   const handleSave = async () => {
+    console.log('Record', record);
+    console.log('accounTo', accountTo);
     if (id) {
       await updateRecord({...record, account_id: accountId, category_id: categoryId});
     } else {
 
       if(record.type === 'transfer'){
-        await insertRecord({...record, amount: -record.amount, account_id: accountId, category_id: 12});
-        await insertRecord({...record, amount: record.amount, account_id: accountTo?.account_id, category_id: 12});
+        await insertRecord({...record, amount: -record.amount, category_id: 12});
+        await insertRecord({...record, amount: record.amount, category_id: 12});
+      } else if (record.type === 'expense') {
+      await insertRecord({...record, amount: -record.amount});
       } else {
-      await insertRecord({...record, account_id: accountId, category_id: categoryId});
+        await insertRecord({...record})
       }
     }
-    console.log('Record added', {...record, account_id: accountId, category_id: categoryId});
+    console.log('Record added', record);
     router.back();
   };
 
@@ -131,14 +135,19 @@ const NewTransaction = () => {
     setAllCategory(result);
   }
 
-  const handleAccount = (account:string, account_id: number,transfer:boolean) => {
-    console.log('Account', transfer,account)
+  const handleAccount = (account:string, account_id: number, transfer?:boolean) => {
     if(transfer){
-      setAccountTo({ account, account_id });
-      accountTo.account && record.account ? setOpenAccount(false):null;
+      setAccountTo({ account, account_id });  
     } else {
       setRecord({ ...record, account, account_id });
     }
+    if(record.type === 'transfer'){
+      if (transfer ? record.account : accountTo.account) {
+        setOpenAccount(false);
+      }
+    } else {
+      setOpenAccount(false);
+    } 
   }
 
   const getAccounts = async () => {
@@ -236,9 +245,9 @@ const NewTransaction = () => {
               <TouchableOpacity 
                 style={{flex:1,borderWidth:0,alignItems:'center',justifyContent:'center', borderRadius:8}}
                 onPress={() => 
-                  setOpenAccount(true)}
+                  setOpenAccount(!openAccount)}
                 > 
-                <Text style={{fontSize:16}}>{accountTo.account ?? 'Select Category'}</Text>
+                <Text style={{fontSize:16}}>{accountTo.account ?? 'Select Account'}</Text>
               </TouchableOpacity>
               :
               
@@ -274,7 +283,6 @@ const NewTransaction = () => {
           accountTo={accountTo?.account ?? ''} 
           allAccounts={allAccounts} 
           handleAccount={handleAccount} 
-          setOpen={setOpenAccount}
           transfer={record.type==='transfer'}
           
           />:
