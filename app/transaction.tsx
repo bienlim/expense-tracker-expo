@@ -227,7 +227,7 @@ const NewTransaction = () => {
                   <Text style={{fontSize:16}}>{record.account ?? 'Select Account'}</Text>
           </TouchableOpacity>
         </View>
-        { record.type === 'expense'? (
+        { record.type === 'income'? (
           <Ionicons name='caret-back-outline' size={24} color='black'/>
         ):(
           <Ionicons name='caret-forward-outline' size={24} color='black'/>
