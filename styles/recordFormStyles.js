@@ -41,6 +41,7 @@ export const recordFormStyles = StyleSheet.create({
           borderWidth: 0.2,
           borderColor: '#ffffff',
           marginHorizontal: 10,
+          alignItems: 'center',
         },
         typeActiveBtn:{
           flex: 1,
